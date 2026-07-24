@@ -16,4 +16,6 @@ public class ProductRepository : GenericRepository<Product>, IProductRepository
         return await _context.Products
             .FirstOrDefaultAsync(x => x.SKU == sku);
     }
+
+    
 }

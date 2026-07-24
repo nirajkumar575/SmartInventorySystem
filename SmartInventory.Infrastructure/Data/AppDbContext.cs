@@ -12,4 +12,13 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     }
 
     public DbSet<Product> Products => Set<Product>();
+
+
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        base.OnModelCreating(builder);
+
+        builder.Entity<Product>()
+            .HasQueryFilter(x => !x.IsDeleted);
+    }
 }

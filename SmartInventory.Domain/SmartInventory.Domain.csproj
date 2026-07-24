@@ -9,11 +9,14 @@
   <ItemGroup>
     <Folder Include="Enums\" />
     <Folder Include="Constants\" />
-    <Folder Include="Common\" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SmartInventory.Shared\SmartInventory.Shared.csproj" />
   </ItemGroup>
 
 </Project>

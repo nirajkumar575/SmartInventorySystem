@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SmartInventory.Domain.Common;
 using SmartInventory.Domain.Interfaces;
 using SmartInventory.Infrastructure.Data;
+using SmartInventory.Shared.Common;
 using System.Linq.Expressions;
 
 namespace SmartInventory.Infrastructure.Repositories;
@@ -29,11 +31,36 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
         => _dbSet.Update(entity);
 
     public void Delete(T entity)
-        => _dbSet.Remove(entity);
+    {
+        if (entity is BaseEntity baseEntity)
+        {
+            baseEntity.IsDeleted = true;
+            baseEntity.DeletedOn = DateTime.UtcNow;
+        }
+
+        _dbSet.Update(entity);
+    }
 
     public async Task<bool> ExistsAsync(Expression<Func<T, bool>> predicate)
         => await _dbSet.AnyAsync(predicate);
 
+    public async Task<PagedResult<T>> GetPagedAsync(
+    PaginationRequest request)
+    {
+        var query = _dbSet.AsQueryable();
+        var totalRecords = await query.CountAsync();
+        var items = await query
+            .Skip((request.PageNumber - 1) * request.PageSize)
+            .Take(request.PageSize)
+            .ToListAsync();
+        return new PagedResult<T>
+        {
+            PageNumber = request.PageNumber,
+            PageSize = request.PageSize,
+            TotalRecords = totalRecords,
+            Items = items
+        };
+    }
     public async Task SaveChangesAsync()
         => await _context.SaveChangesAsync();
 }

@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using SmartInventory.Application.DTOs.Product;
 using SmartInventory.Application.Interfaces;
+using SmartInventory.Application.QueryParameters;
+using SmartInventory.Shared.Common;
 
 namespace SmartInventory.API.Controllers;
 
@@ -18,10 +20,11 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] ProductQueryParameters request)
     {
-        var products = await _productService.GetAllAsync();
-        return Ok(products);
+        var result = await _productService.GetAllAsync(request);
+
+        return Ok(result);
     }
 
     [HttpGet("{id:int}")]

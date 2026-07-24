@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using SmartInventory.API.Extensions;
 using SmartInventory.API.Middleware;
 using SmartInventory.Application.Interfaces;
 using SmartInventory.Application.Mapping;
@@ -103,6 +104,9 @@ builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"))
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterDtoValidator>();
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddFluentValidationClientsideAdapters();
+
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure();
 
 //builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();

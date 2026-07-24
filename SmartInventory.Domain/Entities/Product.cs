@@ -1,4 +1,6 @@
-﻿namespace SmartInventory.Domain.Entities;
+﻿using SmartInventory.Domain.Common;
+
+namespace SmartInventory.Domain.Entities;
 
 public class Product : BaseEntity
 {

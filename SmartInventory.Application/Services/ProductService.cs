@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
 using SmartInventory.Application.DTOs.Product;
 using SmartInventory.Application.Interfaces;
+using SmartInventory.Shared.QueryParameters;
 using SmartInventory.Domain.Entities;
 using SmartInventory.Domain.Interfaces;
+using SmartInventory.Shared.Common;
 
 namespace SmartInventory.Application.Services;
 
@@ -21,19 +23,27 @@ public class ProductService : IProductService
     //    var products = await _productRepository.GetAllAsync();
     //    return _mapper.Map<IEnumerable<ProductDto>>(products);
     //}
-    public async Task<IEnumerable<ProductDto>> GetAllAsync()
-    {
-        var products = await _productRepository.GetAllAsync();
 
-        return products.Select(p => new ProductDto
+    public async Task<PagedResult<ProductDto>> GetAllAsync(ProductQueryParameters request)
+    {
+        var result = await _productRepository.GetPagedProductsAsync(request);
+
+        return new PagedResult<ProductDto>
         {
-            Id = p.Id,
-            Name = p.Name,
-            SKU = p.SKU,
-            Price = p.Price,
-            Quantity = p.Quantity
-        });
+            PageNumber = result.PageNumber,
+            PageSize = result.PageSize,
+            TotalRecords = result.TotalRecords,
+            Items = result.Items.Select(p => new ProductDto
+            {
+                Id = p.Id,
+                Name = p.Name,
+                SKU = p.SKU,
+                Price = p.Price,
+                Quantity = p.Quantity
+            })
+        };
     }
+
     //public async Task<ProductDto?> GetByIdAsync(int id)
     //{
     //    var product = await _productRepository.GetByIdAsync(id);
@@ -81,7 +91,9 @@ public class ProductService : IProductService
             Name = dto.Name,
             SKU = dto.SKU,
             Price = dto.Price,
-            Quantity = dto.Quantity
+            Quantity = dto.Quantity,
+            CreatedOn = DateTime.UtcNow,
+            CreatedBy = "System"
         };
 
         await _productRepository.AddAsync(product);
@@ -107,6 +119,7 @@ public class ProductService : IProductService
         product.Price = dto.Price;
         product.Quantity = dto.Quantity;
         product.ModifiedOn = DateTime.UtcNow;
+        product.ModifiedBy = "System";
 
         _productRepository.Update(product);
         await _productRepository.SaveChangesAsync();
