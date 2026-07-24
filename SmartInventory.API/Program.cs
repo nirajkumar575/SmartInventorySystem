@@ -1,12 +1,16 @@
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using SmartInventory.API.Middleware;
 using SmartInventory.Application.Interfaces;
 using SmartInventory.Application.Mapping;
 using SmartInventory.Application.Services;
+using SmartInventory.Application.Validators;
 using SmartInventory.Domain.Entities;
 using SmartInventory.Domain.Interfaces;
 using SmartInventory.Infrastructure.Data;
@@ -96,6 +100,10 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 
+builder.Services.AddValidatorsFromAssemblyContaining<RegisterDtoValidator>();
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddFluentValidationClientsideAdapters();
+
 //builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
@@ -110,6 +118,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseMiddleware<ExceptionMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 
