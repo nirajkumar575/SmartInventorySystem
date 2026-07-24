@@ -10,6 +10,7 @@ using SmartInventory.Domain.Entities;
 using SmartInventory.Domain.Interfaces;
 using SmartInventory.Infrastructure.Data;
 using SmartInventory.Infrastructure.Repositories;
+using SmartInventory.Infrastructure.Seed;
 using SmartInventory.Infrastructure.Services;
 using SmartInventory.Infrastructure.Settings;
 using System.Text;
@@ -79,5 +80,15 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+
+    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+
+    await DbInitializer.SeedAsync(userManager, roleManager);
+}
 
 app.Run();
