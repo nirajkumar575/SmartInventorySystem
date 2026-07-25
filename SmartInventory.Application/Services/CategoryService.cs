@@ -1,4 +1,5 @@
-﻿using SmartInventory.Application.DTOs.Category;
+﻿using AutoMapper;
+using SmartInventory.Application.DTOs.Category;
 using SmartInventory.Application.Interfaces;
 using SmartInventory.Domain.Entities;
 using SmartInventory.Domain.Interfaces;
@@ -8,27 +9,24 @@ namespace SmartInventory.Application.Services;
 
 public class CategoryService : ICategoryService
 {
-    private readonly ICategoryRepository _categoryRepository;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
+    private readonly ICurrentUserService _currentUserService;
 
-    public CategoryService(ICategoryRepository categoryRepository)
+    public CategoryService(IUnitOfWork unitOfWork,IMapper mapper, ICurrentUserService currentUserService)
     {
-        _categoryRepository = categoryRepository;
+        _unitOfWork = unitOfWork;
+        _mapper = mapper;
+        _currentUserService = currentUserService;
     }
 
     public async Task<PagedResult<CategoryDto>> GetPagedAsync(CategoryQueryParameters request)
     {
-        var result = await _categoryRepository.GetPagedCategoriesAsync(request);
+        var result = await _unitOfWork.CategoryRepository.GetPagedCategoriesAsync(request);
 
         return new PagedResult<CategoryDto>
         {
-            Items = result.Items.Select(c => new CategoryDto
-            {
-                Id = c.Id,
-                Name = c.Name,
-                Description = c.Description,
-                IsActive = c.IsActive
-            }).ToList(),
-
+            Items = _mapper.Map<List<CategoryDto>>(result.Items),
             TotalRecords = result.TotalRecords,
             PageNumber = result.PageNumber,
             PageSize = result.PageSize
@@ -37,73 +35,63 @@ public class CategoryService : ICategoryService
 
     public async Task<CategoryDto?> GetByIdAsync(int id)
     {
-        var category = await _categoryRepository.GetByIdAsync(id);
+        var category = await _unitOfWork.CategoryRepository.GetByIdAsync(id);
 
         if (category == null)
             return null;
 
-        return new CategoryDto
-        {
-            Id = category.Id,
-            Name = category.Name,
-            Description = category.Description,
-            IsActive = category.IsActive
-        };
+        return _mapper.Map<CategoryDto>(category);
     }
 
     public async Task<CategoryDto> CreateAsync(CreateCategoryDto dto)
     {
-        var existing = await _categoryRepository.GetByNameAsync(dto.Name);
+        var existing = await _unitOfWork.CategoryRepository.GetByNameAsync(dto.Name);
 
         if (existing != null)
             throw new Exception("Category already exists.");
 
-        var category = new Category
-        {
-            Name = dto.Name,
-            Description = dto.Description,
-            IsActive = true
-        };
+        var category = _mapper.Map<Category>(dto);
 
-        await _categoryRepository.AddAsync(category);
-        await _categoryRepository.SaveChangesAsync();
+        category.IsActive = true;
+        category.CreatedOn = DateTime.UtcNow;
+        category.CreatedBy = _currentUserService.UserName ?? "System";
 
-        return new CategoryDto
-        {
-            Id = category.Id,
-            Name = category.Name,
-            Description = category.Description,
-            IsActive = category.IsActive
-        };
+        await _unitOfWork.CategoryRepository.AddAsync(category);
+        await _unitOfWork.SaveChangesAsync();
+
+        return _mapper.Map<CategoryDto>(category);
     }
 
     public async Task<bool> UpdateAsync(int id, UpdateCategoryDto dto)
     {
-        var category = await _categoryRepository.GetByIdAsync(id);
+        var category = await _unitOfWork.CategoryRepository.GetByIdAsync(id);
 
         if (category == null)
             return false;
 
-        category.Name = dto.Name;
-        category.Description = dto.Description;
-        category.IsActive = dto.IsActive;
-        category.ModifiedOn = DateTime.UtcNow;
+        _mapper.Map(dto, category);
 
-        _categoryRepository.Update(category);
-        await _categoryRepository.SaveChangesAsync();
+        category.ModifiedOn = DateTime.UtcNow;
+        category.ModifiedBy = _currentUserService.UserName ?? "System";
+
+        _unitOfWork.CategoryRepository.Update(category);
+        await _unitOfWork.SaveChangesAsync();
 
         return true;
     }
 
     public async Task<bool> DeleteAsync(int id)
     {
-        var category = await _categoryRepository.GetByIdAsync(id);
+        var category = await _unitOfWork.CategoryRepository.GetByIdAsync(id);
 
         if (category == null)
             return false;
+        category.IsDeleted = true;
+        category.DeletedOn = DateTime.UtcNow;
+        category.DeletedBy = _currentUserService.UserName ?? "System";
 
-        _categoryRepository.Delete(category);
-        await _categoryRepository.SaveChangesAsync();
+        _unitOfWork.CategoryRepository.Update(category);
+        await _unitOfWork.SaveChangesAsync();
 
         return true;
     }

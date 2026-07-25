@@ -64,6 +64,40 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
             Items = items
         };
     }
-    public async Task SaveChangesAsync()
-        => await _context.SaveChangesAsync();
+    public void DeleteRange(IEnumerable<T> entities)
+    {
+        foreach (var entity in entities)
+        {
+            Delete(entity);
+        }
+    }
+
+    public async Task<int> CountAsync()
+    {
+        return await _dbSet.CountAsync();
+    }
+
+    public async Task<int> CountAsync(Expression<Func<T, bool>> predicate)
+    {
+        return await _dbSet.CountAsync(predicate);
+    }
+
+    public async Task<decimal> SumAsync(Expression<Func<T, decimal>> selector)
+    {
+        return await _dbSet
+            .Select(selector)
+            .DefaultIfEmpty(0)
+            .SumAsync();
+    }
+
+    public async Task<decimal> SumAsync(
+        Expression<Func<T, bool>> predicate,
+        Expression<Func<T, decimal>> selector)
+    {
+        return await _dbSet
+            .Where(predicate)
+            .Select(selector)
+            .DefaultIfEmpty(0)
+            .SumAsync();
+    }
 }

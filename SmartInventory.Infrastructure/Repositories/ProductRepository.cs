@@ -76,4 +76,10 @@ public class ProductRepository : GenericRepository<Product>, IProductRepository
             Items = items
         };
     }
+
+    public async Task<int> GetLowStockCountAsync(int threshold)
+    {
+        return await _context.Products
+            .CountAsync(x => x.Quantity <= threshold);
+    }
 }

@@ -12,5 +12,7 @@ public class Product : BaseEntity
 
     public int Quantity { get; set; }
     public int CategoryId { get; set; }
-    public Category? Category { get; set; }
+    public Category Category { get; set; } = null!;
+    public ICollection<PurchaseItem>? PurchaseItems { get; set; }=new List<PurchaseItem>();
+    public ICollection<SaleItem> SaleItems { get; set; } = new List<SaleItem>();
 }

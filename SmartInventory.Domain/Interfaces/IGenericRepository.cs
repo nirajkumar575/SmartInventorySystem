@@ -17,5 +17,10 @@ public interface IGenericRepository<T> where T : class
 
     Task<bool> ExistsAsync(Expression<Func<T, bool>> predicate);
     Task<PagedResult<T>> GetPagedAsync(PaginationRequest request);
-    Task SaveChangesAsync();
+    void DeleteRange(IEnumerable<T> entities);
+
+    Task<int> CountAsync();
+    Task<int> CountAsync(Expression<Func<T, bool>> predicate);
+    Task<decimal> SumAsync(Expression<Func<T, decimal>> selector);
+    Task<decimal> SumAsync(Expression<Func<T, bool>> predicate, Expression<Func<T, decimal>> selector);
 }
