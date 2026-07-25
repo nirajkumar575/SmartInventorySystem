@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SmartInventory.Application.DTOs.Product;
 using SmartInventory.Application.Interfaces;
-using SmartInventory.Application.QueryParameters;
+using SmartInventory.Shared.QueryParameters;
 using SmartInventory.Shared.Common;
 
 namespace SmartInventory.API.Controllers;

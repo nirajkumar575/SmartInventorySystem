@@ -11,4 +11,5 @@ public class ApplicationUser : IdentityUser
     public bool IsActive { get; set; } = true;
 
     public DateTime CreatedOn { get; set; } = DateTime.UtcNow;
+    public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 }

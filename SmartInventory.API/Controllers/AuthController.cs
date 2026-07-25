@@ -75,18 +75,34 @@ public class AuthController : ControllerBase
                 message = "Invalid email or password."
             });
 
-        var token = await _jwtTokenService.GenerateToken(user);
+        var response = await _jwtTokenService.GenerateTokensAsync(user);
+        return Ok(response);
+    }
+
+    [HttpPost("refresh-token")]
+    public async Task<IActionResult> RefreshToken(
+    RefreshTokenRequestDto request)
+    {
+        var result = await _jwtTokenService.RefreshTokenAsync(request.RefreshToken);
+
+        if (result == null)
+            return Unauthorized(new
+            {
+                message = "Invalid refresh token."
+            });
+
+        return Ok(result);
+    }
+
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout(
+    RefreshTokenRequestDto request)
+    {
+        await _jwtTokenService.RevokeRefreshTokenAsync(request.RefreshToken);
 
         return Ok(new
         {
-            token,
-            user = new
-            {
-                user.Id,
-                user.FullName,
-                user.Email,
-                user.UserName
-            }
+            message = "Logged out successfully."
         });
     }
 }

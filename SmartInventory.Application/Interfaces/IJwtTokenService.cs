@@ -1,8 +1,11 @@
-﻿using SmartInventory.Domain.Entities;
+﻿using SmartInventory.Application.DTOs.Auth;
+using SmartInventory.Domain.Entities;
 
 namespace SmartInventory.Application.Interfaces;
 
 public interface IJwtTokenService
 {
-    Task<string> GenerateToken(ApplicationUser user);
+    Task<LoginResponseDto> GenerateTokensAsync(ApplicationUser user);
+    Task<LoginResponseDto?> RefreshTokenAsync(string refreshToken);
+    Task RevokeRefreshTokenAsync(string refreshToken);
 }

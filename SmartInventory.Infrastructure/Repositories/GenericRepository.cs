@@ -18,10 +18,10 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
         _dbSet = context.Set<T>();
     }
 
-    public async Task<IEnumerable<T>> GetAllAsync()
+    public virtual async Task<IEnumerable<T>> GetAllAsync()
         => await _dbSet.ToListAsync();
 
-    public async Task<T?> GetByIdAsync(int id)
+    public virtual async Task<T?> GetByIdAsync(int id)
         => await _dbSet.FindAsync(id);
 
     public async Task AddAsync(T entity)
@@ -35,10 +35,13 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
         if (entity is BaseEntity baseEntity)
         {
             baseEntity.IsDeleted = true;
-            baseEntity.DeletedOn = DateTime.UtcNow;
+            baseEntity.ModifiedOn = DateTime.UtcNow;
+
+            _dbSet.Update(entity);
+            return;
         }
 
-        _dbSet.Update(entity);
+        _dbSet.Remove(entity);
     }
 
     public async Task<bool> ExistsAsync(Expression<Func<T, bool>> predicate)

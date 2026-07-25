@@ -13,6 +13,7 @@ public static class InfrastructureExtensions
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<IProductService, ProductService>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         return services;
     }
