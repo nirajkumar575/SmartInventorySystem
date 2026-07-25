@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using QuestPDF.Infrastructure;
 using Serilog;
 using SmartInventory.API.Extensions;
 using SmartInventory.API.Middleware;
@@ -134,8 +135,14 @@ builder.Services.AddScoped<ISaleRepository, SaleRepository>();
 builder.Services.AddScoped<ISaleService, SaleService>();
 builder.Services.AddScoped<ISaleItemRepository, SaleItemRepository>();
 builder.Services.AddScoped<IPurchaseItemRepository, PurchaseItemRepository>();
+builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+builder.Services.AddScoped<IExcelExportService, ExcelExportService>();
+builder.Services.AddScoped<IPdfService, PdfService>();
 
+
+
+QuestPDF.Settings.License = LicenseType.Community;
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

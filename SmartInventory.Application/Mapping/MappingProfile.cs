@@ -4,6 +4,7 @@ using SmartInventory.Application.DTOs.Customer;
 using SmartInventory.Application.DTOs.Invoice;
 using SmartInventory.Application.DTOs.Product;
 using SmartInventory.Application.DTOs.Purchase;
+using SmartInventory.Application.DTOs.Reports;
 using SmartInventory.Application.DTOs.Sale;
 using SmartInventory.Application.DTOs.Supplier;
 using SmartInventory.Domain.Entities;
@@ -44,5 +45,8 @@ public class MappingProfile : Profile
         CreateMap<Sale, InvoiceDto>().ForMember(d => d.InvoiceDate,o => o.MapFrom(s => s.SaleDate)).ForMember(d => d.CustomerName,o => o.MapFrom(s => s.Customer.Name))
             .ForMember(d => d.CustomerPhone, o => o.MapFrom(s => s.Customer.Phone)).ForMember(d => d.CustomerAddress,o => o.MapFrom(s => s.Customer.Address)).ForMember(d => d.Items,o => o.MapFrom(s => s.SaleItems));
         CreateMap<SaleItem, InvoiceItemDto>().ForMember(d => d.ProductName, o => o.MapFrom(s => s.Product.Name));
+
+        CreateMap<SalesReportDto, Sale>().ReverseMap();
+        CreateMap<SaleItem, SalesReportItemDto>().ReverseMap();
     }
 }

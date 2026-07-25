@@ -9,10 +9,12 @@ namespace SmartInventory.API.Controllers;
 public class ReportController : ControllerBase
 {
     private readonly IReportService _reportService;
+    private readonly IExcelExportService _excelService;
 
-    public ReportController(IReportService reportService)
+    public ReportController(IReportService reportService, IExcelExportService excelService)
     {
         _reportService = reportService;
+        _excelService = excelService;
     }
 
     [HttpGet("sales")]
@@ -37,5 +39,20 @@ public class ReportController : ControllerBase
     public async Task<IActionResult> Profit([FromQuery] ReportQueryParameters request)
     {
         return Ok(await _reportService.GetProfitReportAsync(request));
+    }
+
+    [HttpGet("sales/excel")]
+    public async Task<IActionResult> SalesExcel([FromQuery] ReportQueryParameters request)
+    {
+        var data = await _reportService.GetSalesReportAsync(request);
+
+        var file = _excelService
+            .GenerateSalesReportExcel(data);
+
+
+        return File(
+            file,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "SalesReport.xlsx");
     }
 }

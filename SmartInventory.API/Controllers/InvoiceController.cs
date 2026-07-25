@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SmartInventory.Application.Interfaces;
+using SmartInventory.Application.Services;
 
 namespace SmartInventory.API.Controllers;
 
@@ -8,10 +9,12 @@ namespace SmartInventory.API.Controllers;
 public class InvoiceController : ControllerBase
 {
     private readonly IInvoiceService _invoiceService;
+    private readonly IPdfService _pdfService;
 
-    public InvoiceController(IInvoiceService invoiceService)
+    public InvoiceController(IInvoiceService invoiceService, IPdfService pdfService)
     {
         _invoiceService = invoiceService;
+        _pdfService = pdfService;
     }
 
     [HttpGet("{saleId}")]
@@ -23,5 +26,25 @@ public class InvoiceController : ControllerBase
             return NotFound();
 
         return Ok(result);
+    }
+
+    [HttpGet("{id}/pdf")]
+    public async Task<IActionResult> GeneratePdf(int id)
+    {
+
+        var invoice = await _invoiceService.GetInvoiceAsync(id);
+
+        if (invoice == null)
+            return NotFound();
+
+
+        var pdf = _pdfService.GenerateInvoicePdf(invoice);
+
+
+        return File(
+            pdf,
+            "application/pdf",
+            $"Invoice-{invoice.InvoiceNumber}.pdf");
+
     }
 }
