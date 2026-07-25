@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SmartInventory.Domain.Common;
 using SmartInventory.Domain.Entities;
 using SmartInventory.Domain.Interfaces;
 using SmartInventory.Infrastructure.Data;
@@ -105,6 +106,68 @@ namespace SmartInventory.Infrastructure.Repositories
             return await _context.Purchases
                 .Where(x => x.PurchaseDate.Date == today)
                 .SumAsync(x => (decimal?)x.TotalAmount) ?? 0;
+        }
+        public async Task<IEnumerable<Purchase>> GetPurchaseReportAsync(ReportQueryParameters request)
+        {
+            var query = _context.Purchases
+                .Include(x => x.Supplier)
+                .Include(x => x.PurchaseItems)
+                    .ThenInclude(x => x.Product)
+                .AsQueryable();
+
+            if (request.FromDate.HasValue)
+            {
+                query = query.Where(x => x.PurchaseDate >= request.FromDate.Value);
+            }
+
+            if (request.ToDate.HasValue)
+            {
+                query = query.Where(x => x.PurchaseDate <= request.ToDate.Value);
+            }
+
+            return await query
+                .OrderByDescending(x => x.PurchaseDate)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Purchase>> GetRecentPurchasesAsync(int count)
+        {
+            return await _context.Purchases
+                .Include(x => x.Supplier)
+                .OrderByDescending(x => x.PurchaseDate)
+                .Take(count)
+                .ToListAsync();
+        }
+        public async Task<IEnumerable<Purchase>> GetLast7DaysPurchasesAsync()
+        {
+            var fromDate = DateTime.UtcNow.Date.AddDays(-6);
+
+            return await _context.Purchases
+                .Where(x => x.PurchaseDate >= fromDate)
+                .OrderBy(x => x.PurchaseDate)
+                .ToListAsync();
+        }
+        public async Task<IEnumerable<Product>> GetLowStockProductsAsync(int threshold)
+        {
+            return await _context.Products
+                .Where(x => x.Quantity <= threshold)
+                .OrderBy(x => x.Quantity)
+                .ToListAsync();
+        }
+        public async Task<IEnumerable<DashboardChartData>> GetLast7DaysPurchaseChartAsync()
+        {
+            var fromDate = DateTime.UtcNow.Date.AddDays(-6);
+
+            return await _context.Purchases
+                .Where(x => x.PurchaseDate >= fromDate)
+                .GroupBy(x => x.PurchaseDate.Date)
+                .Select(g => new DashboardChartData
+                {
+                    Date = g.Key,
+                    TotalAmount = g.Sum(x => x.TotalAmount)
+                })
+                .OrderBy(x => x.Date)
+                .ToListAsync();
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using SmartInventory.Domain.Entities;
+﻿using SmartInventory.Domain.Common;
+using SmartInventory.Domain.Entities;
 using SmartInventory.Shared.Common;
 using SmartInventory.Shared.QueryParameters;
 
@@ -12,5 +13,9 @@ namespace SmartInventory.Domain.Interfaces
         Task<decimal> GetTotalPurchaseAmountAsync();
         Task<decimal> GetTodayPurchasesAsync();
         Task<IEnumerable<Purchase>> GetPurchaseReportAsync(ReportQueryParameters request);
+
+        Task<IEnumerable<Purchase>> GetRecentPurchasesAsync(int count);
+        Task<IEnumerable<Purchase>> GetLast7DaysPurchasesAsync();
+        Task<IEnumerable<DashboardChartData>> GetLast7DaysPurchaseChartAsync();
     }
 }

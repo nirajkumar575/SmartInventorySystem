@@ -84,20 +84,22 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
 
     public async Task<decimal> SumAsync(Expression<Func<T, decimal>> selector)
     {
-        return await _dbSet
+        var values = await _dbSet
             .Select(selector)
-            .DefaultIfEmpty(0)
-            .SumAsync();
+            .ToListAsync();
+
+        return values.Sum();
     }
 
     public async Task<decimal> SumAsync(
-        Expression<Func<T, bool>> predicate,
-        Expression<Func<T, decimal>> selector)
+    Expression<Func<T, bool>> predicate,
+    Expression<Func<T, decimal>> selector)
     {
-        return await _dbSet
+        var data = await _dbSet
             .Where(predicate)
             .Select(selector)
-            .DefaultIfEmpty(0)
-            .SumAsync();
+            .ToListAsync();
+
+        return data.Sum();
     }
 }

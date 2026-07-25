@@ -82,4 +82,20 @@ public class ProductRepository : GenericRepository<Product>, IProductRepository
         return await _context.Products
             .CountAsync(x => x.Quantity <= threshold);
     }
+    public async Task<IEnumerable<Product>> GetStockReportAsync()
+    {
+        return await _context.Products
+            .Include(x => x.Category)
+            .OrderBy(x => x.Name)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<Product>> GetLowStockProductsAsync(int threshold)
+    {
+        return await _context.Products
+            .Include(x => x.Category)
+            .Where(x => x.Quantity <= threshold)
+            .OrderBy(x => x.Quantity)
+            .ToListAsync();
+    }
 }
