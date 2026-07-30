@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
+using DocumentFormat.OpenXml.Vml.Office;
 using Microsoft.Extensions.Logging;
+using SmartInventory.Application.DTOs.Notification;
 using SmartInventory.Application.DTOs.Product;
 using SmartInventory.Application.Exceptions;
 using SmartInventory.Application.Interfaces;
@@ -16,13 +18,22 @@ public class ProductService : IProductService
     private readonly ILogger<ProductService> _logger;
     private readonly IMapper _mapper;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IAuditLogService _auditLogService;
+    private readonly INotificationService _notificationService;
 
-    public ProductService(IUnitOfWork unitOfWork, IMapper mapper,ILogger<ProductService> logger,ICurrentUserService currentUserService)
+    public ProductService(IUnitOfWork unitOfWork, 
+        IMapper mapper, 
+        ILogger<ProductService> logger, 
+        ICurrentUserService currentUserService, 
+        IAuditLogService auditLogService,
+        INotificationService notificationService)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _logger = logger;
         _currentUserService = currentUserService;
+        _auditLogService = auditLogService;
+        _notificationService = notificationService;
     }
     public async Task<PagedResult<ProductDto>> GetAllAsync(ProductQueryParameters request)
     {
@@ -39,7 +50,8 @@ public class ProductService : IProductService
 
     public async Task<ProductDto?> GetByIdAsync(int id)
     {
-        var product = await _unitOfWork.ProductRepository.GetByIdAsync(id);
+        //var product = await _unitOfWork.ProductRepository.GetByIdAsync(id);
+        var product = await _unitOfWork.ProductRepository.GetByIdWithCategoryAsync(id);
 
         if (product == null)
             return null;
@@ -60,6 +72,18 @@ public class ProductService : IProductService
         _logger.LogInformation("Creating new product with SKU {SKU}",dto.SKU);
         await _unitOfWork.ProductRepository.AddAsync(product);
         await _unitOfWork.SaveChangesAsync();
+        if (product.Quantity <= product.MinimumStock)
+        {
+            await _notificationService.CreateAsync(new CreateNotificationDto
+            {
+                UserId= _currentUserService.UserId,
+                Title = "Low Stock Alert",
+                Message = $"{product.Name} stock is running low.",
+                Type = "Warning",
+                Url = "/products"
+            });
+        }
+        await _auditLogService.AddAsync("Product", "Create", $"Product '{dto.Name}' created successfully.");
 
         return _mapper.Map<ProductDto>(product);
     }
@@ -78,6 +102,18 @@ public class ProductService : IProductService
         _logger.LogInformation("Updating Product {Id}", id);
         _unitOfWork.ProductRepository.Update(product);
         await _unitOfWork.SaveChangesAsync();
+        if (product.Quantity <= product.MinimumStock)
+        {
+            await _notificationService.CreateAsync(new CreateNotificationDto
+            {
+                UserId = _currentUserService.UserId,
+                Title = "Low Stock Alert",
+                Message = $"'{product.Name}' stock is running low. Current stock: {product.Quantity}.",
+                Type = "Warning",
+                Url = "/products"
+            });
+        }
+        await _auditLogService.AddAsync("Product", "Update", $"Product '{product.Name}' updated successfully.");
 
         return true;
     }
@@ -97,6 +133,8 @@ public class ProductService : IProductService
 
         _unitOfWork.ProductRepository.Update(product);
         await _unitOfWork.SaveChangesAsync();
+
+        await _auditLogService.AddAsync("Product", "Delete", $"Product '{product.Name}' deleted successfully.");
 
         return true;
     }

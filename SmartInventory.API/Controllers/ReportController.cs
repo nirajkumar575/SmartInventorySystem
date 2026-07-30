@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using SmartInventory.Application.Interfaces;
 using SmartInventory.Shared.QueryParameters;
 
@@ -6,6 +7,7 @@ namespace SmartInventory.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = "Admin,Manager")]
 public class ReportController : ControllerBase
 {
     private readonly IReportService _reportService;

@@ -17,6 +17,10 @@ public class UnitOfWork : IUnitOfWork
     public ISaleRepository SaleRepository { get; }
     public ISaleItemRepository SaleItemRepository { get; }
     public IPurchaseItemRepository PurchaseItemRepository { get; }
+    public IStockAdjustmentRepository StockAdjustmentRepository { get; }
+    public IAppSettingRepository AppSettingRepository { get; }
+    public IAuditLogRepository AuditLogRepository { get; }
+    public INotificationRepository Notifications { get; }
 
 
 
@@ -28,7 +32,11 @@ public class UnitOfWork : IUnitOfWork
         ICustomerRepository customerRepository,
         ISaleRepository saleRepository,
         ISaleItemRepository saleItemRepository,
-        IPurchaseItemRepository purchaseItemRepository)
+        IPurchaseItemRepository purchaseItemRepository,
+        IStockAdjustmentRepository stockAdjustmentRepository,
+        IAppSettingRepository appSettingRepository,
+        IAuditLogRepository auditLogRepository,
+        INotificationRepository notifications)
     {
         _context = context;
         ProductRepository = productRepository;
@@ -39,6 +47,10 @@ public class UnitOfWork : IUnitOfWork
         SaleRepository = saleRepository;
         SaleItemRepository = saleItemRepository;
         PurchaseItemRepository = purchaseItemRepository;
+        StockAdjustmentRepository = stockAdjustmentRepository;
+        AppSettingRepository = appSettingRepository;
+        AuditLogRepository = auditLogRepository;
+        Notifications = notifications;
     }
 
     public async Task BeginTransactionAsync()

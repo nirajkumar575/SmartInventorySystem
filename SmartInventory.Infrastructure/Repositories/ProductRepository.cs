@@ -4,6 +4,7 @@ using SmartInventory.Domain.Entities;
 using SmartInventory.Domain.Interfaces;
 using SmartInventory.Infrastructure.Data;
 using SmartInventory.Shared.Common;
+using Microsoft.AspNetCore.Mvc;
 
 namespace SmartInventory.Infrastructure.Repositories;
 
@@ -19,8 +20,13 @@ public class ProductRepository : GenericRepository<Product>, IProductRepository
             .Include(x => x.Category)
             .FirstOrDefaultAsync(x => x.SKU == sku);
     }
-
-    public async Task<PagedResult<Product>> GetPagedProductsAsync(ProductQueryParameters request)
+    public async Task<Product?> GetByIdWithCategoryAsync(int id)
+    {
+        return await _context.Products
+            .Include(p => p.Category)
+            .FirstOrDefaultAsync(p => p.Id == id);
+    }
+    public async Task<PagedResult<Product>> GetPagedProductsAsync([FromQuery]ProductQueryParameters request)
     {
         var query = _context.Products.Include(x => x.Category).AsQueryable();
 
@@ -29,7 +35,9 @@ public class ProductRepository : GenericRepository<Product>, IProductRepository
         {
             query = query.Where(x =>
                 x.Name.Contains(request.Search) ||
-                x.SKU.Contains(request.Search));
+                x.SKU.Contains(request.Search) ||
+                x.Category.Name.Contains(request.Search)
+            );
         }
 
         // Price Filter

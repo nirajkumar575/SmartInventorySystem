@@ -1,12 +1,18 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Identity;
+using SmartInventory.Application.DTOs.Audit;
 using SmartInventory.Application.DTOs.Category;
 using SmartInventory.Application.DTOs.Customer;
 using SmartInventory.Application.DTOs.Invoice;
+using SmartInventory.Application.DTOs.Notification;
 using SmartInventory.Application.DTOs.Product;
 using SmartInventory.Application.DTOs.Purchase;
 using SmartInventory.Application.DTOs.Reports;
+using SmartInventory.Application.DTOs.Role;
 using SmartInventory.Application.DTOs.Sale;
+using SmartInventory.Application.DTOs.Settings;
 using SmartInventory.Application.DTOs.Supplier;
+using SmartInventory.Application.DTOs.User;
 using SmartInventory.Domain.Entities;
 
 namespace SmartInventory.Application.Mapping;
@@ -15,10 +21,17 @@ public class MappingProfile : Profile
 {
     public MappingProfile()
     {
+        CreateMap<AppSetting, AppSettingDto>();
+        CreateMap<UpdateAppSettingDto, AppSetting>();
+
+        CreateMap<ApplicationUser, UserDto>();
+        CreateMap<UpdateUserDto, ApplicationUser>();
+
         //CreateMap<Product, ProductDto>().ReverseMap();
         CreateMap<Product, ProductDto>().ForMember(d => d.CategoryName, o => o.MapFrom(s => s.Category != null ? s.Category.Name : string.Empty));
         CreateMap<CreateProductDto, Product>();
         CreateMap<UpdateProductDto, Product>();
+        CreateMap<Product, StockReportDto>();
 
         CreateMap<Category, CategoryDto>().ReverseMap();
         CreateMap<CreateCategoryDto, Category>();
@@ -31,6 +44,7 @@ public class MappingProfile : Profile
         CreateMap<Purchase, PurchaseDto>().ForMember(dest => dest.SupplierName,opt => opt.MapFrom(src => src.Supplier.Name)).ForMember(dest => dest.Items,opt => opt.MapFrom(src => src.PurchaseItems));
         CreateMap<PurchaseItem, PurchaseItemDto>().ForMember(dest => dest.ProductName,opt => opt.MapFrom(src => src.Product.Name));
         CreateMap<CreatePurchaseDto, Purchase>();
+        CreateMap<Purchase, PurchaseReportDto>();
         CreateMap<CreatePurchaseItemDto, PurchaseItem>();
 
         CreateMap<Customer, CustomerDto>().ReverseMap();
@@ -48,5 +62,10 @@ public class MappingProfile : Profile
 
         CreateMap<SalesReportDto, Sale>().ReverseMap();
         CreateMap<SaleItem, SalesReportItemDto>().ReverseMap();
+
+        CreateMap<AuditLog, AuditLogDto>();
+        CreateMap<IdentityRole, RoleDto>();
+
+        CreateMap<Notification, NotificationDto>();
     }
 }
