@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.Extensions.Logging;
+using SmartInventory.Application.DTOs.Notification;
 using SmartInventory.Application.DTOs.Purchase;
 using SmartInventory.Application.Exceptions;
 using SmartInventory.Application.Interfaces;
@@ -16,17 +17,20 @@ namespace SmartInventory.Application.Services
         private readonly IMapper _mapper;
         private readonly ICurrentUserService _currentUser;
         private readonly ILogger<PurchaseService> _logger;
+        private readonly INotificationService _notificationService;
 
         public PurchaseService(
             IUnitOfWork unitOfWork,
             IMapper mapper,
             ICurrentUserService currentUser, 
-            ILogger<PurchaseService> logger)
+            ILogger<PurchaseService> logger,
+            INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _currentUser = currentUser;
             _logger = logger;
+            _notificationService = notificationService;
         }
         public async Task<PagedResult<PurchaseDto>> GetAllAsync(PurchaseQueryParameters request)
         {
@@ -43,12 +47,12 @@ namespace SmartInventory.Application.Services
             };
         }
         public async Task<PurchaseDto> CreateAsync(CreatePurchaseDto dto)
-        {
+        {           
             await _unitOfWork.BeginTransactionAsync();
 
             try
             {
-                await ValidateSupplierAsync(dto.SupplierId);
+                var supplier =await ValidateSupplierAsync(dto.SupplierId);
                 var purchase = new Purchase
                 {
                     InvoiceNumber = $"PUR-{DateTime.UtcNow:yyyyMMddHHmmss}",
@@ -71,8 +75,16 @@ namespace SmartInventory.Application.Services
                 await _unitOfWork.PurchaseRepository.AddAsync(purchase);
 
                 await _unitOfWork.SaveChangesAsync();
-
                 await _unitOfWork.CommitTransactionAsync();
+
+                await _notificationService.CreateAsync(new CreateNotificationDto
+                {
+                    Title = "New Purchase",
+                    Message = $"Purchase from {supplier.Name} has been added.",
+                    Type = "Success",
+                    Url = "/purchases"
+                });
+
                 _logger.LogInformation("Purchase {InvoiceNumber} created successfully.", purchase.InvoiceNumber);
 
                 return _mapper.Map<PurchaseDto>(purchase);
@@ -96,12 +108,14 @@ namespace SmartInventory.Application.Services
             return _mapper.Map<PurchaseDto>(purchase);
         }
 
-        private async Task ValidateSupplierAsync(int supplierId)
+        private async Task<Supplier> ValidateSupplierAsync(int supplierId)
         {
             var supplier = await _unitOfWork.SupplierRepository.GetByIdAsync(supplierId);
 
             if (supplier == null)
-                throw new NotFoundException($"Supplier Id {supplierId} not found.");
+                throw new Exception("Supplier not found.");
+
+            return supplier;
         }
         private async Task<Product> GetProductAsync(int productId)
         {
@@ -120,23 +134,19 @@ namespace SmartInventory.Application.Services
             {
                 await ValidateSupplierAsync(dto.SupplierId);
 
-                var purchase = await _unitOfWork.PurchaseRepository
-                    .GetPurchaseForUpdateAsync(id);
+                var purchase = await _unitOfWork.PurchaseRepository.GetPurchaseForUpdateAsync(id);
 
                 if (purchase == null)
                     throw new NotFoundException("Purchase not found.");
 
-                // Rollback previous stock
                 foreach (var item in purchase.PurchaseItems)
                 {
                     await DecreaseStockAsync(item.ProductId, item.Quantity);
                 }
 
-                // Remove old purchase items
                 _unitOfWork.PurchaseItemRepository.DeleteRange(purchase.PurchaseItems);
                 purchase.PurchaseItems.Clear();
 
-                // Add new purchase items
                 foreach (var item in dto.Items)
                 {
                     await IncreaseStockAsync(item.ProductId, item.Quantity);
@@ -162,15 +172,36 @@ namespace SmartInventory.Application.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(
-                    ex,
-                    "Error updating purchase {PurchaseId}",
-                    id);
+                _logger.LogError(ex, "Error updating purchase {PurchaseId}", id);
 
                 await _unitOfWork.RollbackTransactionAsync();
 
                 throw;
             }
+        }
+        public async Task<bool> DeleteAsync(int id)
+        {
+            var purchase = await _unitOfWork.PurchaseRepository
+                .GetPurchaseForUpdateAsync(id);
+
+            if (purchase == null)
+                return false;
+
+            _logger.LogWarning(
+                "Deleting Purchase Id {Id}",
+                id);
+
+            // Rollback Product Stock
+            foreach (var item in purchase.PurchaseItems)
+            {
+                await DecreaseStockAsync(item.ProductId, item.Quantity);
+            }
+
+            _unitOfWork.PurchaseRepository.Delete(purchase);
+
+            await _unitOfWork.SaveChangesAsync();
+
+            return true;
         }
         private PurchaseItem CreatePurchaseItem(CreatePurchaseItemDto item)
         {

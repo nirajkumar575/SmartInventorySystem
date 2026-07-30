@@ -10,6 +10,10 @@ public interface IUnitOfWork : IDisposable
     ISaleRepository SaleRepository { get; }
     ISaleItemRepository SaleItemRepository { get; }
     IPurchaseItemRepository PurchaseItemRepository { get; }
+    IStockAdjustmentRepository StockAdjustmentRepository { get; }
+    IAppSettingRepository AppSettingRepository { get; }
+    IAuditLogRepository AuditLogRepository { get; }
+    INotificationRepository Notifications { get; }
 
 
     Task<int> SaveChangesAsync();

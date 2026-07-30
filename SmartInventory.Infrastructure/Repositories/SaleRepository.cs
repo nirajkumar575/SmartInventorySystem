@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SmartInventory.Application.DTOs.Dashboard;
+using SmartInventory.Domain.Common;
 using SmartInventory.Domain.Entities;
 using SmartInventory.Domain.Interfaces;
 using SmartInventory.Infrastructure.Data;
@@ -115,5 +117,90 @@ public class SaleRepository : GenericRepository<Sale>, ISaleRepository
         return await _context.Sales
             .Where(x => x.SaleDate.Date == today)
             .SumAsync(x => (decimal?)x.TotalAmount) ?? 0;
+    }
+
+    public async Task<IEnumerable<Sale>> GetSalesReportAsync(ReportQueryParameters request)
+    {
+        var query = _context.Sales
+            .Include(x => x.Customer)
+            .Include(x => x.SaleItems)
+                .ThenInclude(x => x.Product)
+            .AsQueryable();
+
+        if (request.FromDate.HasValue)
+        {
+            query = query.Where(x => x.SaleDate >= request.FromDate.Value);
+        }
+
+        if (request.ToDate.HasValue)
+        {
+            query = query.Where(x => x.SaleDate <= request.ToDate.Value);
+        }
+
+        return await query
+            .OrderByDescending(x => x.SaleDate)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<Sale>> GetRecentSalesAsync(int count)
+    {
+        return await _context.Sales
+            .Include(x => x.Customer)
+            .OrderByDescending(x => x.SaleDate)
+            .Take(count)
+            .ToListAsync();
+    }
+    public async Task<IEnumerable<TopSellingProduct>> GetTopSellingProductsAsync(int count)
+    {
+        return await _context.SaleItems
+            .Include(x => x.Product)
+            .GroupBy(x => new
+            {
+                x.ProductId,
+                x.Product.Name
+            })
+            .Select(g => new TopSellingProduct
+            {
+                ProductId = g.Key.ProductId,
+                ProductName = g.Key.Name,
+                QuantitySold = g.Sum(x => x.Quantity)
+            })
+            .OrderByDescending(x => x.QuantitySold)
+            .Take(count)
+            .ToListAsync();
+    }
+    public async Task<IEnumerable<Sale>> GetLast7DaysSalesAsync()
+    {
+        var fromDate = DateTime.UtcNow.Date.AddDays(-6);
+
+        return await _context.Sales
+            .Where(x => x.SaleDate >= fromDate)
+            .OrderBy(x => x.SaleDate)
+            .ToListAsync();
+    }
+    
+    public async Task<IEnumerable<DashboardChartData>> GetLast7DaysSalesChartAsync()
+    {
+        var fromDate = DateTime.UtcNow.Date.AddDays(-6);
+
+        return await _context.Sales
+            .Where(x => x.SaleDate >= fromDate)
+            .GroupBy(x => x.SaleDate.Date)
+            .Select(g => new DashboardChartData
+            {
+                Date = g.Key,
+                TotalAmount = g.Sum(x => x.TotalAmount)
+            })
+            .OrderBy(x => x.Date)
+            .ToListAsync();
+    }
+
+    public async Task<Sale?> GetInvoiceAsync(int saleId)
+    {
+        return await _context.Sales
+            .Include(x => x.Customer)
+            .Include(x => x.SaleItems)
+                .ThenInclude(x => x.Product)
+            .FirstOrDefaultAsync(x => x.Id == saleId);
     }
 }

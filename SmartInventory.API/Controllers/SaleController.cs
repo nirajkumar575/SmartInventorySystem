@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using SmartInventory.Application.DTOs.Sale;
 using SmartInventory.Application.Interfaces;
 using SmartInventory.Shared.QueryParameters;
@@ -7,6 +8,7 @@ namespace SmartInventory.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = "Admin,Manager,Employee")]
 public class SaleController : ControllerBase
 {
     private readonly ISaleService _saleService;

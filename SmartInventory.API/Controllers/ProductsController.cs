@@ -7,9 +7,9 @@ using SmartInventory.Shared.Common;
 
 namespace SmartInventory.API.Controllers;
 
-[Authorize]
-[Route("api/[controller]")]
 [ApiController]
+[Route("api/[controller]")]
+[Authorize(Roles = "Admin,Manager")]
 public class ProductsController : ControllerBase
 {
     private readonly IProductService _productService;

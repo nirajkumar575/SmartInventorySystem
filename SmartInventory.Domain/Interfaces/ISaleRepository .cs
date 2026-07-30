@@ -1,4 +1,5 @@
-﻿using SmartInventory.Domain.Entities;
+﻿using SmartInventory.Domain.Common;
+using SmartInventory.Domain.Entities;
 using SmartInventory.Shared.Common;
 using SmartInventory.Shared.QueryParameters;
 
@@ -12,4 +13,11 @@ public interface ISaleRepository : IGenericRepository<Sale>
     Task<decimal> GetTotalRevenueAsync();
     Task<decimal> GetTodaySalesAsync();
     Task<IEnumerable<Sale>> GetSalesReportAsync(ReportQueryParameters request);
+
+    Task<IEnumerable<Sale>> GetRecentSalesAsync(int count);
+    //Task<IEnumerable<SaleItem>> GetTopSellingProductsAsync(int count);
+    Task<IEnumerable<TopSellingProduct>> GetTopSellingProductsAsync(int count);
+    Task<IEnumerable<Sale>> GetLast7DaysSalesAsync();
+    Task<IEnumerable<DashboardChartData>> GetLast7DaysSalesChartAsync();
+    Task<Sale?> GetInvoiceAsync(int saleId);
 }

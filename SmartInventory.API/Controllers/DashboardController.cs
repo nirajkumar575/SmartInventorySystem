@@ -6,7 +6,7 @@ namespace SmartInventory.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(Roles = "Admin,Manager,Employee")]
 public class DashboardController : ControllerBase
 {
     private readonly IDashboardService _dashboardService;

@@ -8,7 +8,7 @@ namespace SmartInventory.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize]
+[Authorize(Roles = "Admin,Manager")]
 public class CategoriesController : ControllerBase
 {
     private readonly ICategoryService _categoryService;

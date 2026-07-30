@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.Extensions.Logging;
+using SmartInventory.Application.DTOs.Notification;
 using SmartInventory.Application.DTOs.Sale;
 using SmartInventory.Application.Exceptions;
 using SmartInventory.Application.Interfaces;
@@ -16,17 +17,20 @@ public class SaleService : ISaleService
     private readonly IMapper _mapper;
     private readonly ICurrentUserService _currentUser;
     private readonly ILogger<SaleService> _logger;
+    private readonly INotificationService _notificationService;
 
     public SaleService(
         IUnitOfWork unitOfWork,
         IMapper mapper,
         ICurrentUserService currentUser,
-        ILogger<SaleService> logger)
+        ILogger<SaleService> logger,
+        INotificationService notificationService)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _currentUser = currentUser;
         _logger = logger;
+        _notificationService = notificationService;
     }
 
     public async Task<PagedResult<SaleDto>> GetAllAsync(SaleQueryParameters request)
@@ -99,7 +103,13 @@ public class SaleService : ISaleService
             await _unitOfWork.SaveChangesAsync();
 
             await _unitOfWork.CommitTransactionAsync();
-
+            await _notificationService.CreateAsync(new CreateNotificationDto
+            {
+                Title = "New Sale",
+                Message = $"Sale Invoice #{sale.InvoiceNumber} created.",
+                Type = "Info",
+                Url = "/sales"
+            });
             _logger.LogInformation(
                 "Sale created successfully. Invoice:{Invoice}",
                 sale.InvoiceNumber);

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -8,6 +9,7 @@ using SmartInventory.Domain.Entities;
 using SmartInventory.Infrastructure.Data;
 using SmartInventory.Infrastructure.Settings;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Security.Claims;
 using System.Text;
 
@@ -41,24 +43,39 @@ public class JwtTokenService : IJwtTokenService
             ApplicationUserId = user.Id
         };
 
+        var roles = await _userManager.GetRolesAsync(user);
+        var role = roles.FirstOrDefault() ?? "Employee";
+
         _context.RefreshTokens.Add(refreshTokenEntity);
 
         await _context.SaveChangesAsync();
+
+        //return new LoginResponseDto
+        //{
+        //    AccessToken = accessToken,
+        //    RefreshToken = refreshToken,
+        //    Expires = DateTime.UtcNow.AddMinutes(_jwtSettings.DurationInMinutes),
+
+        //    User = new UserDto
+        //    {
+        //        Id = user.Id,
+        //        FullName = user.FullName,
+        //        Email = user.Email!,
+        //        UserName = user.UserName!
+        //    }
+        //};
 
         return new LoginResponseDto
         {
             AccessToken = accessToken,
             RefreshToken = refreshToken,
-            Expires = DateTime.UtcNow.AddMinutes(_jwtSettings.DurationInMinutes),
-
-            User = new UserDto
-            {
-                Id = user.Id,
-                FullName = user.FullName,
-                Email = user.Email!,
-                UserName = user.UserName!
-            }
+            RefreshTokenExpiryTime = GetRefreshTokenExpiry(),
+            UserName = user.UserName!,
+            Email = user.Email!,
+            Role = role
         };
+
+
     }
     public async Task<LoginResponseDto?> RefreshTokenAsync(string refreshToken)
     {
@@ -97,14 +114,14 @@ public class JwtTokenService : IJwtTokenService
             AccessToken = accessToken,
             RefreshToken = newRefreshToken,
             Expires = DateTime.UtcNow.AddMinutes(_jwtSettings.DurationInMinutes),
-
-            User = new UserDto
-            {
-                Id = token.ApplicationUser.Id,
-                FullName = token.ApplicationUser.FullName,
-                Email = token.ApplicationUser.Email!,
-                UserName = token.ApplicationUser.UserName!
-            }
+            
+            //User = new UserDto
+            //{
+            //    Id = token.ApplicationUser.Id,
+            //    FullName = token.ApplicationUser.FullName,
+            //    Email = token.ApplicationUser.Email!,
+            //    UserName = token.ApplicationUser.UserName!
+            //}
         };
     }
 

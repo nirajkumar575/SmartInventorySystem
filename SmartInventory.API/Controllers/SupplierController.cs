@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using SmartInventory.Application.DTOs.Supplier;
 using SmartInventory.Application.Interfaces;
 
@@ -6,6 +7,7 @@ namespace SmartInventory.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = "Admin,Manager")]
 public class SupplierController : ControllerBase
 {
     private readonly ISupplierService _supplierService;
