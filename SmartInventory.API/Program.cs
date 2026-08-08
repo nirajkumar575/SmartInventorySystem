@@ -22,6 +22,7 @@ using SmartInventory.Infrastructure.Seed;
 using SmartInventory.Infrastructure.Services;
 using SmartInventory.Infrastructure.Settings;
 using System.Text;
+using Npgsql;
 
 
 Log.Logger = new LoggerConfiguration().ReadFrom.Configuration(new ConfigurationBuilder().AddJsonFile("appsettings.json").Build()).CreateLogger();
@@ -29,17 +30,23 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog();
 
 builder.Services.AddControllers();
+
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAngular",
-        policy =>
-        {
-            policy.WithOrigins("http://localhost:4200")
-                  .AllowAnyHeader()
-                  .AllowAnyMethod()
-                  .AllowCredentials();
-        });
+    options.AddPolicy("AllowAngular", policy =>
+    {
+        var allowedOrigins = builder.Configuration["AllowedOrigins"]?
+            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+            ?? new[] { "http://localhost:4200" };
+
+        policy
+            .WithOrigins(allowedOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
 });
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -78,9 +85,35 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection"));
+    var connectionString =
+        builder.Configuration.GetConnectionString("DefaultConnection");
+
+    var databaseProvider =
+        builder.Configuration["DatabaseProvider"] ?? "SqlServer";
+
+    if (databaseProvider.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase))
+    {
+        options.UseNpgsql(
+            connectionString,
+            sql =>
+            {
+                sql.MigrationsAssembly("SmartInventory.Infrastructure");
+                sql.MigrationsHistoryTable("__EFMigrationsHistory");
+                sql.EnableRetryOnFailure();
+            });
+    }
+    else
+    {
+        options.UseSqlServer(
+            connectionString,
+            sql =>
+            {
+                sql.MigrationsAssembly("SmartInventory.Infrastructure");
+                sql.EnableRetryOnFailure();
+            });
+    }
 });
+
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
     options.Password.RequireDigit = true;
@@ -182,6 +215,10 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
+
+    var context = services.GetRequiredService<AppDbContext>();
+
+    await context.Database.MigrateAsync();
 
     var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
     var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
